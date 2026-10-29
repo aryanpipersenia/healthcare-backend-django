@@ -1,0 +1,720 @@
+{
+  "info": {
+    "_postman_id": "7f8b9e61-34a2-4a7b-a112-9c1234567890",
+    "name": "Healthcare Backend API - Complete Collection",
+    "description": "Comprehensive Postman collection for the Healthcare Backend System built with Django, Django REST Framework, PostgreSQL, and SimpleJWT.\n\n### How to use:\n1. Import this file into Postman.\n2. Run **1.1 Register User** or **1.2 Login User**.\n3. The test scripts automatically store the JWT Bearer token into `{{token}}` collection variable.\n4. All subsequent Patient, Doctor, and Mapping requests will use `{{token}}` automatically!\n5. Dynamic IDs (`{{patient_id}}`, `{{doctor_id}}`, `{{mapping_id}}`) are also auto-updated upon creation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "doctor_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "mapping_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication APIs",
+      "item": [
+        {
+          "name": "1.1 Register New User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.tokens && jsonData.tokens.access) {",
+                  "    pm.collectionVariables.set('token', jsonData.tokens.access);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refresh);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('token', jsonData.tokens.access);",
+                  "        pm.environment.set('refresh_token', jsonData.tokens.refresh);",
+                  "    }",
+                  "    console.log('JWT Token auto-saved to variables!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. John Watson\",\n  \"email\": \"john.watson@hospital.com\",\n  \"password\": \"MedicalPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            },
+            "description": "POST /api/auth/register/ - Register a new user with name, email, and password."
+          }
+        },
+        {
+          "name": "1.2 Login User (Obtain JWT Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access) {",
+                  "    pm.collectionVariables.set('token', jsonData.access);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('token', jsonData.access);",
+                  "        pm.environment.set('refresh_token', jsonData.refresh);",
+                  "    }",
+                  "    console.log('JWT Access Token saved successfully!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.watson@hospital.com\",\n  \"password\": \"MedicalPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "POST /api/auth/login/ - Log in a user and return a JWT access and refresh token."
+          }
+        },
+        {
+          "name": "1.3 Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access) {",
+                  "    pm.collectionVariables.set('token', jsonData.access);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('token', jsonData.access);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "token", "refresh", ""]
+            },
+            "description": "POST /api/auth/token/refresh/ - Generate a fresh access token using a refresh token."
+          }
+        },
+        {
+          "name": "1.4 Get User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile", ""]
+            },
+            "description": "GET /api/auth/profile/ - Retrieve details of currently logged in user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Patient Management APIs",
+      "item": [
+        {
+          "name": "2.1 Add New Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('patient_id', jsonData.id);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('patient_id', jsonData.id);",
+                  "    }",
+                  "    console.log('Saved patient_id:', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Arthur Conan Doyle\",\n  \"age\": 52,\n  \"gender\": \"Male\",\n  \"phone\": \"+1-555-0144\",\n  \"email\": \"arthur.doyle@example.com\",\n  \"address\": \"221B Baker Street, London\",\n  \"medical_history\": \"Mild chronic bronchitis and recurring fatigue.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ""]
+            },
+            "description": "POST /api/patients/ - Add a new patient (Authenticated users only)."
+          }
+        },
+        {
+          "name": "2.2 Retrieve All Patients (User-created)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ""]
+            },
+            "description": "GET /api/patients/ - Retrieve all patients created by the authenticated user."
+          }
+        },
+        {
+          "name": "2.3 Get Specific Patient Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", ""]
+            },
+            "description": "GET /api/patients/<id>/ - Get details of a specific patient."
+          }
+        },
+        {
+          "name": "2.4 Update Patient Details (PUT)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sir Arthur Conan Doyle\",\n  \"age\": 53,\n  \"gender\": \"Male\",\n  \"phone\": \"+1-555-0144\",\n  \"email\": \"arthur.doyle@example.com\",\n  \"address\": \"221B Baker Street, London, UK\",\n  \"medical_history\": \"Bronchitis symptoms stabilized with inhaler therapy.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", ""]
+            },
+            "description": "PUT /api/patients/<id>/ - Update patient details."
+          }
+        },
+        {
+          "name": "2.5 Partial Update Patient (PATCH)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1-555-9988\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", ""]
+            },
+            "description": "PATCH /api/patients/<id>/ - Partial update patient details."
+          }
+        },
+        {
+          "name": "2.6 Delete Patient Record",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", ""]
+            },
+            "description": "DELETE /api/patients/<id>/ - Delete a patient record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Doctor Management APIs",
+      "item": [
+        {
+          "name": "3.1 Add New Doctor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('doctor_id', jsonData.id);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('doctor_id', jsonData.id);",
+                  "    }",
+                  "    console.log('Saved doctor_id:', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Meredith Grey\",\n  \"specialization\": \"General Surgery\",\n  \"email\": \"meredith.grey@hospital.com\",\n  \"phone\": \"+1-555-3344\",\n  \"years_of_experience\": 14,\n  \"department\": \"Surgical Department\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", ""]
+            },
+            "description": "POST /api/doctors/ - Add a new doctor (Authenticated users only)."
+          }
+        },
+        {
+          "name": "3.2 Retrieve All Doctors",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", ""]
+            },
+            "description": "GET /api/doctors/ - Retrieve all doctors."
+          }
+        },
+        {
+          "name": "3.3 Get Specific Doctor Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", ""]
+            },
+            "description": "GET /api/doctors/<id>/ - Get details of a specific doctor."
+          }
+        },
+        {
+          "name": "3.4 Update Doctor Details (PUT)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Meredith Grey\",\n  \"specialization\": \"Head of General Surgery\",\n  \"email\": \"meredith.grey@hospital.com\",\n  \"phone\": \"+1-555-3344\",\n  \"years_of_experience\": 15,\n  \"department\": \"Department of Advanced Surgery\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", ""]
+            },
+            "description": "PUT /api/doctors/<id>/ - Update doctor details."
+          }
+        },
+        {
+          "name": "3.5 Delete Doctor Record",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/{{doctor_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "{{doctor_id}}", ""]
+            },
+            "description": "DELETE /api/doctors/<id>/ - Delete a doctor record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Patient-Doctor Mapping APIs",
+      "item": [
+        {
+          "name": "4.1 Assign Doctor to Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.mapping && jsonData.mapping.id) {",
+                  "    pm.collectionVariables.set('mapping_id', jsonData.mapping.id);",
+                  "    if (pm.environment) {",
+                  "        pm.environment.set('mapping_id', jsonData.mapping.id);",
+                  "    }",
+                  "    console.log('Saved mapping_id:', jsonData.mapping.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient\": {{patient_id}},\n  \"doctor\": {{doctor_id}},\n  \"notes\": \"Assigned for pre-operative surgical assessment and respiratory management.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mappings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mappings", ""]
+            },
+            "description": "POST /api/mappings/ - Assign a doctor to a patient."
+          }
+        },
+        {
+          "name": "4.2 Retrieve All Patient-Doctor Mappings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/mappings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mappings", ""]
+            },
+            "description": "GET /api/mappings/ - Retrieve all patient-doctor mappings."
+          }
+        },
+        {
+          "name": "4.3 Get All Doctors Assigned to Patient (GET /api/mappings/<patient_id>/)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/mappings/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mappings", "{{patient_id}}", ""]
+            },
+            "description": "GET /api/mappings/<patient_id>/ - Get all doctors assigned to a specific patient."
+          }
+        },
+        {
+          "name": "4.4 Get All Doctors Assigned to Patient (Dedicated Path)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/mappings/patient/{{patient_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mappings", "patient", "{{patient_id}}", ""]
+            },
+            "description": "GET /api/mappings/patient/<patient_id>/ - Dedicated endpoint to get all doctors assigned to a specific patient."
+          }
+        },
+        {
+          "name": "4.5 Remove Doctor from Patient (DELETE /api/mappings/<id>/)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/mappings/{{mapping_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mappings", "{{mapping_id}}", ""]
+            },
+            "description": "DELETE /api/mappings/<id>/ - Remove a doctor from a patient (by mapping ID)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. System Overview",
+      "item": [
+        {
+          "name": "5.1 Root API Discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/",
+              "host": ["{{base_url}}"],
+              "path": ["api", ""]
+            },
+            "description": "GET /api/ - Overview of system status and all registered API endpoints."
+          }
+        }
+      ]
+    }
+  ]
+}
